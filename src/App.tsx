@@ -16,6 +16,7 @@ export const App: React.FC = () => {
   const [err, setErr] = useState('');
   const [inputValue, setInputValue] = useState('');
   const [isCheck, setIsCheck] = useState(false);
+  const [isEdit, setIsEdit] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -161,9 +162,27 @@ export const App: React.FC = () => {
                   />
                 </label>
 
-                <span data-cy="TodoTitle" className="todo__title">
-                  {todo.title}
-                </span>
+                {isEdit && (
+                  <input
+                    data-cy="TodoTitleField"
+                    type="text"
+                    className="todo__title-field"
+                    placeholder="Empty todo will be deleted"
+                    value={todo.title}
+                  />
+                )}
+
+                {!isEdit && (
+                  <span
+                    data-cy="TodoTitle"
+                    className="todo__title"
+                    onDoubleClick={() => {
+                      setIsEdit(true);
+                    }}
+                  >
+                    {todo.title}
+                  </span>
+                )}
 
                 {/* Remove button appears only on hover */}
                 <button
@@ -185,33 +204,6 @@ export const App: React.FC = () => {
               </div>
             ))}
 
-            {/* This todo is an active todo */}
-            <div data-cy="Todo" className="todo">
-              <label className="todo__status-label">
-                <input
-                  data-cy="TodoStatus"
-                  type="checkbox"
-                  className="todo__status"
-                />
-              </label>
-
-              <span data-cy="TodoTitle" className="todo__title">
-                Not Completed Todo
-              </span>
-              <button
-                type="button"
-                className="todo__remove"
-                data-cy="TodoDelete"
-              >
-                ×
-              </button>
-
-              <div data-cy="TodoLoader" className="modal overlay">
-                <div className="modal-background has-background-white-ter" />
-                <div className="loader" />
-              </div>
-            </div>
-
             {/* This todo is being edited */}
             <div data-cy="Todo" className="todo">
               <label className="todo__status-label">
@@ -223,15 +215,6 @@ export const App: React.FC = () => {
               </label>
 
               {/* This form is shown instead of the title and remove button */}
-              <form>
-                <input
-                  data-cy="TodoTitleField"
-                  type="text"
-                  className="todo__title-field"
-                  placeholder="Empty todo will be deleted"
-                  defaultValue="Todo is being edited now"
-                />
-              </form>
 
               <div data-cy="TodoLoader" className="modal overlay">
                 <div className="modal-background has-background-white-ter" />
