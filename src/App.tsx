@@ -2,7 +2,7 @@
 /* eslint-disable jsx-a11y/control-has-associated-label */
 import React, { useEffect, useState } from 'react';
 import { UserWarning } from './UserWarning';
-import { USER_ID, getTodos } from './api/todos';
+import { USER_ID, getTodos, addTodo, removeTodo } from './api/todos';
 import { Todo } from './types/Todo';
 
 export const App: React.FC = () => {
@@ -33,11 +33,7 @@ export const App: React.FC = () => {
     if (check) {
       setIsCheck(true);
     }
-  }, [todos]);
-
-  if (!USER_ID) {
-    return <UserWarning />;
-  }
+  }, []);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -56,6 +52,8 @@ export const App: React.FC = () => {
         setTodos(prevTodos => {
           return [...prevTodos, newTodo];
         });
+
+        addTodo(newTodo);
       } catch (error) {
         /* eslint-disable-next-line no-console */
         console.error(error);
@@ -71,6 +69,8 @@ export const App: React.FC = () => {
       });
 
       setTodos(newTodos);
+
+      removeTodo(id);
     } catch (error) {
       /* eslint-disable-next-line no-console */
       console.error(error);
@@ -85,6 +85,10 @@ export const App: React.FC = () => {
       setIsCheck(true);
     }
   };
+
+  if (!USER_ID) {
+    return <UserWarning />;
+  }
 
   return (
     <div className="todoapp">
@@ -196,7 +200,7 @@ export const App: React.FC = () => {
                   type="text"
                   className="todo__title-field"
                   placeholder="Empty todo will be deleted"
-                  value="Todo is being edited now"
+                  defaultValue="Todo is being edited now"
                 />
               </form>
 
