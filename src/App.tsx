@@ -2,7 +2,13 @@
 /* eslint-disable jsx-a11y/control-has-associated-label */
 import React, { useEffect, useState } from 'react';
 import { UserWarning } from './UserWarning';
-import { USER_ID, getTodos, addTodo, removeTodo } from './api/todos';
+import {
+  USER_ID,
+  getTodos,
+  addTodo,
+  removeTodo,
+  updateTodo,
+} from './api/todos';
 import { Todo } from './types/Todo';
 
 export const App: React.FC = () => {
@@ -57,7 +63,7 @@ export const App: React.FC = () => {
       } catch (error) {
         /* eslint-disable-next-line no-console */
         console.error(error);
-        setErr('Unable to add todo');
+        setErr('Unable to update a todo');
       }
     }
   };
@@ -78,11 +84,25 @@ export const App: React.FC = () => {
     }
   };
 
-  const checkTodo = () => {
-    const check = todos.some(todo => todo.completed === true);
+  const checkTodo = async (id: number) => {
+    const todo = todos.find(t => t.id === id);
 
-    if (check) {
-      setIsCheck(true);
+    if (!todo) {
+      return;
+    }
+
+    const completed = !todo?.completed;
+
+    try {
+      await updateTodo(id, { completed });
+
+      setTodos(prevTodos =>
+        prevTodos.map(t => (t.id === id ? { ...t, completed } : t)),
+      );
+    } catch (error) {
+      /* eslint-disable-next-line no-console */
+      console.error(error);
+      setErr('Unable to update todo');
     }
   };
 
@@ -122,8 +142,17 @@ export const App: React.FC = () => {
           <section className="todoapp__main" data-cy="TodoList">
             {/* This is a completed todo */}
             {todos.map(todo => (
-              <div key={todo.id} data-cy="Todo" className="todo completed">
-                <label className="todo__status-label" onClick={checkTodo}>
+              <div
+                key={todo.id}
+                data-cy="Todo"
+                className={`todo ${todo.completed ? 'completed' : ''}`}
+              >
+                <label
+                  className="todo__status-label"
+                  onClick={() => {
+                    checkTodo(todo.id);
+                  }}
+                >
                   <input
                     data-cy="TodoStatus"
                     type="checkbox"
@@ -133,7 +162,7 @@ export const App: React.FC = () => {
                 </label>
 
                 <span data-cy="TodoTitle" className="todo__title">
-                  Completed Todo
+                  {todo.title}
                 </span>
 
                 {/* Remove button appears only on hover */}
