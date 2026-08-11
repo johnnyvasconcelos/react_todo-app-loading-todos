@@ -8,6 +8,8 @@ import { Todo } from './types/Todo';
 export const App: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [err, setErr] = useState('');
+  const [inputValue, setInputValue] = useState('');
+  const [isCheck, setIsCheck] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -25,9 +27,64 @@ export const App: React.FC = () => {
     load();
   }, []);
 
+  useEffect(() => {
+    const check = todos.some(todo => todo.completed === true);
+
+    if (check) {
+      setIsCheck(true);
+    }
+  }, [todos]);
+
   if (!USER_ID) {
     return <UserWarning />;
   }
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (inputValue === '') {
+      setErr('Title should not be empty');
+    } else {
+      setErr('');
+      try {
+        const newTodo = {
+          id: 0,
+          userId: USER_ID,
+          title: inputValue,
+          completed: false,
+        };
+
+        setTodos(prevTodos => {
+          return [...prevTodos, newTodo];
+        });
+      } catch (error) {
+        /* eslint-disable-next-line no-console */
+        console.error(error);
+        setErr('Unable to add todo');
+      }
+    }
+  };
+
+  const handleDelete = (id: number) => {
+    try {
+      const newTodos = todos.filter(todo => {
+        return todo.id !== id;
+      });
+
+      setTodos(newTodos);
+    } catch (error) {
+      /* eslint-disable-next-line no-console */
+      console.error(error);
+      setErr('Unable to delete a todo');
+    }
+  };
+
+  const checkTodo = () => {
+    const check = todos.some(todo => todo.completed === true);
+
+    if (check) {
+      setIsCheck(true);
+    }
+  };
 
   return (
     <div className="todoapp">
@@ -43,12 +100,16 @@ export const App: React.FC = () => {
           />
 
           {/* Add a todo on form submit */}
-          <form>
+          <form onSubmit={handleSubmit}>
             <input
               data-cy="NewTodoField"
               type="text"
               className="todoapp__new-todo"
               placeholder="What needs to be done?"
+              onChange={e => {
+                setInputValue(e.target.value);
+              }}
+              value={inputValue}
             />
           </form>
         </header>
@@ -56,35 +117,40 @@ export const App: React.FC = () => {
         {todos.length !== 0 && (
           <section className="todoapp__main" data-cy="TodoList">
             {/* This is a completed todo */}
-            <div data-cy="Todo" className="todo completed">
-              <label className="todo__status-label">
-                <input
-                  data-cy="TodoStatus"
-                  type="checkbox"
-                  className="todo__status"
-                  checked
-                />
-              </label>
+            {todos.map(todo => (
+              <div key={todo.id} data-cy="Todo" className="todo completed">
+                <label className="todo__status-label" onClick={checkTodo}>
+                  <input
+                    data-cy="TodoStatus"
+                    type="checkbox"
+                    className="todo__status"
+                    checked
+                  />
+                </label>
 
-              <span data-cy="TodoTitle" className="todo__title">
-                Completed Todo
-              </span>
+                <span data-cy="TodoTitle" className="todo__title">
+                  Completed Todo
+                </span>
 
-              {/* Remove button appears only on hover */}
-              <button
-                type="button"
-                className="todo__remove"
-                data-cy="TodoDelete"
-              >
-                ×
-              </button>
+                {/* Remove button appears only on hover */}
+                <button
+                  type="button"
+                  className="todo__remove"
+                  data-cy="TodoDelete"
+                  onClick={() => {
+                    handleDelete(todo.id);
+                  }}
+                >
+                  ×
+                </button>
 
-              {/* overlay will cover the todo while it is being deleted or updated */}
-              <div data-cy="TodoLoader" className="modal overlay">
-                <div className="modal-background has-background-white-ter" />
-                <div className="loader" />
+                {/* overlay will cover the todo while it is being deleted or updated */}
+                <div data-cy="TodoLoader" className="modal overlay">
+                  <div className="modal-background has-background-white-ter" />
+                  <div className="loader" />
+                </div>
               </div>
-            </div>
+            ))}
 
             {/* This todo is an active todo */}
             <div data-cy="Todo" className="todo">
@@ -208,7 +274,7 @@ export const App: React.FC = () => {
             {/* this button should be disabled if there are no completed todos */}
             <button
               type="button"
-              className="todoapp__clear-completed"
+              className={`todoapp__clear-completed ${isCheck ? 'is-hidden' : ''}`}
               data-cy="ClearCompletedButton"
             >
               Clear completed
@@ -223,17 +289,19 @@ export const App: React.FC = () => {
         data-cy="ErrorNotification"
         className={`notification is-danger is-light has-text-weight-normal ${err.length === 0 ? 'hidden' : ''}`}
       >
-        <button data-cy="HideErrorButton" type="button" className="delete" />
+        <button
+          data-cy="HideErrorButton"
+          type="button"
+          className="delete"
+          onClick={() => {
+            setErr('');
+          }}
+        />
         {/* show only one message at a time */}
         {err.length > 0 && <span>{err}</span>}
         {/*
-         Unable to load todos
-        <br />
-        Title should not be empty
         <br />
         Unable to add a todo
-        <br />
-        Unable to delete a todo
         <br />
         Unable to update a todo
         */}

@@ -8,3 +8,11 @@ export const getTodos = () => {
 };
 
 // Add more methods here
+
+export const addTodo = (data: Todo[]) => {
+  return client.post(`/todos`, data);
+};
+
+export const removeTodo = (id: number) => {
+  return client.delete(`/todos?userId=${id}`);
+};
