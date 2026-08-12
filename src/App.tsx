@@ -8,6 +8,7 @@ import {
   addTodo,
   removeTodo,
   updateTodo,
+  updateTodoApi,
 } from './api/todos';
 import { Todo } from './types/Todo';
 
@@ -15,6 +16,7 @@ export const App: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [err, setErr] = useState('');
   const [inputValue, setInputValue] = useState('');
+  const [editValue, setEditValue] = useState(inputValue);
   const [isCheck, setIsCheck] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
 
@@ -107,6 +109,26 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleUpdate = async (id: number) => {
+    const todo = todos.find(t => t.id === id);
+
+    if (!todo) {
+      return;
+    }
+
+    try {
+      await updateTodoApi(id, { title: editValue });
+
+      setTodos(prevTodos =>
+        prevTodos.map(t => (t.id === id ? { ...t, title: editValue } : t)),
+      );
+    } catch (error) {
+      /* eslint-disable-next-line no-console */
+      console.error(error);
+      setErr('Unable to update todo');
+    }
+  };
+
   if (!USER_ID) {
     return <UserWarning />;
   }
@@ -168,7 +190,16 @@ export const App: React.FC = () => {
                     type="text"
                     className="todo__title-field"
                     placeholder="Empty todo will be deleted"
-                    value={todo.title}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        setIsEdit(false);
+                        handleUpdate(todo.id);
+                      }
+                    }}
+                    onChange={e => {
+                      setEditValue(e.target.value);
+                    }}
+                    value={editValue}
                   />
                 )}
 
@@ -198,7 +229,11 @@ export const App: React.FC = () => {
 
                 {/* overlay will cover the todo while it is being deleted or updated */}
                 <div data-cy="TodoLoader" className="modal overlay">
-                  <div className="modal-background has-background-white-ter" />
+                  <div
+                    className="
+                      modal-background 
+                      has-background-white-ter"
+                  />
                   <div className="loader" />
                 </div>
               </div>
@@ -217,7 +252,11 @@ export const App: React.FC = () => {
               {/* This form is shown instead of the title and remove button */}
 
               <div data-cy="TodoLoader" className="modal overlay">
-                <div className="modal-background has-background-white-ter" />
+                <div
+                  className="
+                    modal-background 
+                    has-background-white-ter"
+                />
                 <div className="loader" />
               </div>
             </div>
@@ -233,7 +272,7 @@ export const App: React.FC = () => {
               </label>
 
               <span data-cy="TodoTitle" className="todo__title">
-                Todo is being saved now
+                Todo is being saved now!!!!
               </span>
 
               <button
@@ -246,7 +285,11 @@ export const App: React.FC = () => {
 
               {/* 'is-active' class puts this modal on top of the todo */}
               <div data-cy="TodoLoader" className="modal overlay is-active">
-                <div className="modal-background has-background-white-ter" />
+                <div
+                  className="
+                    modal-background 
+                    has-background-white-ter"
+                />
                 <div className="loader" />
               </div>
             </div>

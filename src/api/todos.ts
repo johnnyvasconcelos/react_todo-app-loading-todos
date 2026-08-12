@@ -20,3 +20,7 @@ export const removeTodo = (id: number) => {
 export const updateTodo = (id: number, data: Partial<Todo>) => {
   return client.patch<Todo>(`/todos/${id}`, data);
 };
+
+export const updateTodoApi = (id: number, data: Partial<Todo>) => {
+  return client.patch<Todo>(`/todos/${id}`, data);
+};
