@@ -18,7 +18,7 @@ export const App: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const [editValue, setEditValue] = useState(inputValue);
   const [isCheck, setIsCheck] = useState(false);
-  const [isEdit, setIsEdit] = useState(false);
+  const [isEdit, setIsEdit] = useState<number | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -42,7 +42,7 @@ export const App: React.FC = () => {
     if (check) {
       setIsCheck(true);
     }
-  }, []);
+  }, [todos]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -180,11 +180,11 @@ export const App: React.FC = () => {
                     data-cy="TodoStatus"
                     type="checkbox"
                     className="todo__status"
-                    checked
+                    checked={todo.completed}
                   />
                 </label>
 
-                {isEdit && (
+                {isEdit === todo.id && (
                   <input
                     data-cy="TodoTitleField"
                     type="text"
@@ -192,7 +192,7 @@ export const App: React.FC = () => {
                     placeholder="Empty todo will be deleted"
                     onKeyDown={e => {
                       if (e.key === 'Enter') {
-                        setIsEdit(false);
+                        setIsEdit(null);
                         handleUpdate(todo.id);
                       }
                     }}
@@ -203,12 +203,13 @@ export const App: React.FC = () => {
                   />
                 )}
 
-                {!isEdit && (
+                {isEdit !== todo.id && (
                   <span
                     data-cy="TodoTitle"
                     className="todo__title"
                     onDoubleClick={() => {
-                      setIsEdit(true);
+                      setIsEdit(todo.id);
+                      setEditValue(todo.title);
                     }}
                   >
                     {todo.title}
@@ -238,61 +239,6 @@ export const App: React.FC = () => {
                 </div>
               </div>
             ))}
-
-            {/* This todo is being edited */}
-            <div data-cy="Todo" className="todo">
-              <label className="todo__status-label">
-                <input
-                  data-cy="TodoStatus"
-                  type="checkbox"
-                  className="todo__status"
-                />
-              </label>
-
-              {/* This form is shown instead of the title and remove button */}
-
-              <div data-cy="TodoLoader" className="modal overlay">
-                <div
-                  className="
-                    modal-background 
-                    has-background-white-ter"
-                />
-                <div className="loader" />
-              </div>
-            </div>
-
-            {/* This todo is in loadind state */}
-            <div data-cy="Todo" className="todo">
-              <label className="todo__status-label">
-                <input
-                  data-cy="TodoStatus"
-                  type="checkbox"
-                  className="todo__status"
-                />
-              </label>
-
-              <span data-cy="TodoTitle" className="todo__title">
-                Todo is being saved now!!!!
-              </span>
-
-              <button
-                type="button"
-                className="todo__remove"
-                data-cy="TodoDelete"
-              >
-                ×
-              </button>
-
-              {/* 'is-active' class puts this modal on top of the todo */}
-              <div data-cy="TodoLoader" className="modal overlay is-active">
-                <div
-                  className="
-                    modal-background 
-                    has-background-white-ter"
-                />
-                <div className="loader" />
-              </div>
-            </div>
           </section>
         )}
 
