@@ -19,6 +19,7 @@ export const App: React.FC = () => {
   const [editValue, setEditValue] = useState(inputValue);
   const [isCheck, setIsCheck] = useState(false);
   const [isEdit, setIsEdit] = useState<number | null>(null);
+  const [filterActive, setFilterActive] = useState('all');
 
   useEffect(() => {
     const load = async () => {
@@ -126,6 +127,36 @@ export const App: React.FC = () => {
       /* eslint-disable-next-line no-console */
       console.error(error);
       setErr('Unable to update todo');
+    }
+  };
+
+  // filtros
+  const filterLink = async (filter: string) => {
+    if (filter === 'all') {
+      setFilterActive('all');
+      try {
+        const data = await getTodos();
+
+        setTodos(data);
+      } catch (error) {
+        /* eslint-disable-next-line no-console */
+        console.error(error);
+        setErr('Unable to load todos');
+      }
+    } else if (filter === 'active') {
+      setFilterActive('active');
+      setTodos(
+        todos.filter(todo => {
+          return todo.completed === false;
+        }),
+      );
+    } else if (filter === 'completed') {
+      setFilterActive('completed');
+      setTodos(
+        todos.filter(todo => {
+          return todo.completed === true;
+        }),
+      );
     }
   };
 
@@ -253,24 +284,33 @@ export const App: React.FC = () => {
             <nav className="filter" data-cy="Filter">
               <a
                 href="#/"
-                className="filter__link selected"
+                className={`filter__link ${filterActive === 'all' ? 'selected' : ''}`}
                 data-cy="FilterLinkAll"
+                onClick={() => {
+                  filterLink('all');
+                }}
               >
                 All
               </a>
 
               <a
                 href="#/active"
-                className="filter__link"
+                className={`filter__link ${filterActive === 'active' ? 'selected' : ''}`}
                 data-cy="FilterLinkActive"
+                onClick={() => {
+                  filterLink('active');
+                }}
               >
                 Active
               </a>
 
               <a
                 href="#/completed"
-                className="filter__link"
+                className={`filter__link ${filterActive === 'completed' ? 'selected' : ''}`}
                 data-cy="FilterLinkCompleted"
+                onClick={() => {
+                  filterLink('completed');
+                }}
               >
                 Completed
               </a>
