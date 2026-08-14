@@ -45,6 +45,12 @@ export const App: React.FC = () => {
     }
   }, [todos]);
 
+  useEffect(() => {
+    setTimeout(() => {
+      setErr('');
+    }, 30000);
+  }, [err]);
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (inputValue === '') {
@@ -64,6 +70,7 @@ export const App: React.FC = () => {
         });
 
         addTodo(newTodo);
+        setInputValue('');
       } catch (error) {
         /* eslint-disable-next-line no-console */
         console.error(error);
@@ -130,33 +137,31 @@ export const App: React.FC = () => {
     }
   };
 
+  const getItemsLeft = () => {
+    const itemsLeft = todos.filter(todo => {
+      return todo.completed === false;
+    });
+
+    return itemsLeft.length;
+  };
+
   // filtros
   const filterLink = async (filter: string) => {
-    if (filter === 'all') {
-      setFilterActive('all');
-      try {
-        const data = await getTodos();
+    setFilterActive(filter);
+    try {
+      const data = await getTodos();
 
+      if (filter === 'active') {
+        setTodos(data.filter(todo => !todo.completed));
+      } else if (filter === 'completed') {
+        setTodos(data.filter(todo => todo.completed));
+      } else {
         setTodos(data);
-      } catch (error) {
-        /* eslint-disable-next-line no-console */
-        console.error(error);
-        setErr('Unable to load todos');
       }
-    } else if (filter === 'active') {
-      setFilterActive('active');
-      setTodos(
-        todos.filter(todo => {
-          return todo.completed === false;
-        }),
-      );
-    } else if (filter === 'completed') {
-      setFilterActive('completed');
-      setTodos(
-        todos.filter(todo => {
-          return todo.completed === true;
-        }),
-      );
+    } catch (error) {
+      /* eslint-disable-next-line no-console */
+      console.error(error);
+      setErr('Unable to load todos');
     }
   };
 
@@ -277,7 +282,7 @@ export const App: React.FC = () => {
         {todos.length !== 0 && (
           <footer className="todoapp__footer" data-cy="Footer">
             <span className="todo-count" data-cy="TodosCounter">
-              3 items left
+              {getItemsLeft()} items left
             </span>
 
             {/* Active link should have the 'selected' class */}
