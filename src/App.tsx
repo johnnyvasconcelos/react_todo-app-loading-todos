@@ -1,6 +1,6 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
 /* eslint-disable jsx-a11y/control-has-associated-label */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { UserWarning } from './UserWarning';
 import {
   USER_ID,
@@ -14,16 +14,20 @@ import { Todo } from './types/Todo';
 
 export const App: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [err, setErr] = useState('');
   const [inputValue, setInputValue] = useState('');
   const [editValue, setEditValue] = useState(inputValue);
   const [isCheck, setIsCheck] = useState(false);
   const [isEdit, setIsEdit] = useState<number | null>(null);
   const [filterActive, setFilterActive] = useState('all');
+  const [allCompleted, setAllCompleted] = useState(false);
+  const [isLoader, setIsLoader] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
+        setIsLoader(true);
         const data = await getTodos();
 
         setTodos(data);
@@ -31,10 +35,16 @@ export const App: React.FC = () => {
         /* eslint-disable-next-line no-console */
         console.error(error);
         setErr('Unable to load todos');
+      } finally {
+        setIsLoader(false);
       }
     };
 
     load();
+  }, []);
+
+  useEffect(() => {
+    inputRef.current?.focus();
   }, []);
 
   useEffect(() => {
@@ -43,12 +53,29 @@ export const App: React.FC = () => {
     if (check) {
       setIsCheck(true);
     }
+
+    // verifica se todos estão completed
+
+    let allComplet = true;
+
+    for (let i = 0; i < todos.length; i++) {
+      if (!todos[i].completed) {
+        allComplet = false;
+        break;
+      }
+    }
+
+    if (allComplet && todos.length > 0) {
+      setAllCompleted(true);
+    } else {
+      setAllCompleted(false);
+    }
   }, [todos]);
 
   useEffect(() => {
     setTimeout(() => {
       setErr('');
-    }, 30000);
+    }, 3000);
   }, [err]);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -65,11 +92,12 @@ export const App: React.FC = () => {
           completed: false,
         };
 
+        addTodo(newTodo);
+
         setTodos(prevTodos => {
           return [...prevTodos, newTodo];
         });
 
-        addTodo(newTodo);
         setInputValue('');
       } catch (error) {
         /* eslint-disable-next-line no-console */
@@ -81,17 +109,20 @@ export const App: React.FC = () => {
 
   const handleDelete = (id: number) => {
     try {
+      setIsLoader(true);
       const newTodos = todos.filter(todo => {
         return todo.id !== id;
       });
 
-      setTodos(newTodos);
-
       removeTodo(id);
+
+      setTodos(newTodos);
     } catch (error) {
       /* eslint-disable-next-line no-console */
       console.error(error);
       setErr('Unable to delete a todo');
+    } finally {
+      setIsLoader(false);
     }
   };
 
@@ -105,6 +136,7 @@ export const App: React.FC = () => {
     const completed = !todo?.completed;
 
     try {
+      setIsLoader(true);
       await updateTodo(id, { completed });
 
       setTodos(prevTodos =>
@@ -114,6 +146,8 @@ export const App: React.FC = () => {
       /* eslint-disable-next-line no-console */
       console.error(error);
       setErr('Unable to update todo');
+    } finally {
+      setIsLoader(false);
     }
   };
 
@@ -125,6 +159,7 @@ export const App: React.FC = () => {
     }
 
     try {
+      setIsLoader(true);
       await updateTodoApi(id, { title: editValue });
 
       setTodos(prevTodos =>
@@ -134,6 +169,8 @@ export const App: React.FC = () => {
       /* eslint-disable-next-line no-console */
       console.error(error);
       setErr('Unable to update todo');
+    } finally {
+      setIsLoader(false);
     }
   };
 
@@ -149,6 +186,7 @@ export const App: React.FC = () => {
   const filterLink = async (filter: string) => {
     setFilterActive(filter);
     try {
+      setIsLoader(true);
       const data = await getTodos();
 
       if (filter === 'active') {
@@ -162,7 +200,18 @@ export const App: React.FC = () => {
       /* eslint-disable-next-line no-console */
       console.error(error);
       setErr('Unable to load todos');
+    } finally {
+      setIsLoader(false);
     }
+  };
+
+  // limpeza
+
+  const clearCompleted = async () => {
+    const completedTodos = todos.filter(todo => todo.completed);
+
+    await Promise.all(completedTodos.map(todo => removeTodo(todo.id)));
+    setTodos(todos.filter(todo => !todo.completed));
   };
 
   if (!USER_ID) {
@@ -178,7 +227,7 @@ export const App: React.FC = () => {
           {/* this button should have `active` class only if all todos are completed */}
           <button
             type="button"
-            className="todoapp__toggle-all active"
+            className={`todoapp__toggle-all ${allCompleted ? 'active' : ''}`}
             data-cy="ToggleAllButton"
           />
 
@@ -189,6 +238,7 @@ export const App: React.FC = () => {
               type="text"
               className="todoapp__new-todo"
               placeholder="What needs to be done?"
+              ref={inputRef}
               onChange={e => {
                 setInputValue(e.target.value);
               }}
@@ -226,6 +276,7 @@ export const App: React.FC = () => {
                     type="text"
                     className="todo__title-field"
                     placeholder="Empty todo will be deleted"
+                    autoFocus
                     onKeyDown={e => {
                       if (e.key === 'Enter') {
                         setIsEdit(null);
@@ -265,14 +316,16 @@ export const App: React.FC = () => {
                 </button>
 
                 {/* overlay will cover the todo while it is being deleted or updated */}
-                <div data-cy="TodoLoader" className="modal overlay">
-                  <div
-                    className="
+                {isLoader && (
+                  <div data-cy="TodoLoader" className="modal overlay">
+                    <div
+                      className="
                       modal-background 
                       has-background-white-ter"
-                  />
-                  <div className="loader" />
-                </div>
+                    />
+                    <div className="loader" />
+                  </div>
+                )}
               </div>
             ))}
           </section>
@@ -324,8 +377,9 @@ export const App: React.FC = () => {
             {/* this button should be disabled if there are no completed todos */}
             <button
               type="button"
-              className={`todoapp__clear-completed ${isCheck ? 'is-hidden' : ''}`}
+              className={`todoapp__clear-completed ${!isCheck ? 'is-hidden' : ''}`}
               data-cy="ClearCompletedButton"
+              onClick={clearCompleted}
             >
               Clear completed
             </button>
